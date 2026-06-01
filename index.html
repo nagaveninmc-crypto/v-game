@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>V-GAME | Virtual Nexus Control Terminal</title>
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Import Google Fonts: Sora & Geist -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+    <!-- Import Tailwind CSS via CDN with custom options -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              background: "#05070a", // Deep Space Base
+              surface: "#111417",
+              "surface-dim": "#111417",
+              "surface-bright": "#37393d",
+              "surface-container-lowest": "#0c0e12",
+              "surface-container-low": "#191c1f",
+              "surface-container": "#1d2023",
+              "surface-container-high": "#282a2e",
+              "surface-container-highest": "#323539",
+              "on-surface": "#e1e2e7",
+              "on-surface-variant": "#b9cacb",
+              "inverse-surface": "#e1e2e7",
+              "inverse-on-surface": "#2e3134",
+              outline: "#849495",
+              "outline-variant": "#3a494b",
+              primary: "#00f3ff", // Neon Cyan
+              "on-primary": "#00373a",
+              "primary-container": "#00f3ff",
+              "on-primary-container": "#006b71",
+              secondary: "#bc00ff", // Electric Purple
+              "on-secondary": "#520071",
+              "secondary-container": "#ce5dff",
+              "on-secondary-container": "#480064",
+              tertiary: "#ff00e5", // Hot Pink
+              "on-tertiary": "#5e0053",
+              "tertiary-container": "#ffcdee",
+              error: "#ffb4ab",
+              "on-error": "#690005",
+              "error-container": "#93000a",
+              "on-error-container": "#ffdad6",
+              "primary-fixed": "#6ff6ff",
+              "primary-fixed-dim": "#00dce6",
+              "on-primary-fixed": "#002022",
+              "on-primary-fixed-variant": "#004f53",
+              "secondary-fixed": "#f8d8ff",
+              "secondary-fixed-dim": "#ebb2ff",
+              "on-secondary-fixed": "#320047",
+              "on-secondary-fixed-variant": "#74009f",
+              "tertiary-fixed": "#ffd7f0",
+              "tertiary-fixed-dim": "#fface8"
+            },
+            fontFamily: {
+              sora: ["Sora", "sans-serif"],
+              geist: ["Geist", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+        :root {
+            --primary-neon: #00f3ff;
+            --secondary-neon: #bc00ff;
+            --tertiary-neon: #ff00e5;
+        }
+
+        body {
+            background-color: #05070a;
+            color: #e1e2e7;
+            font-family: 'Geist', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(11, 20, 23, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+        }
+
+        .glass-panel-purple {
+            background: rgba(17, 20, 23, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(188, 0, 255, 0.15);
+        }
+
+        .glass-panel-pink {
+            background: rgba(17, 20, 23, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 0, 229, 0.15);
+        }
+
+        /* Border Glows & Elevations */
+        .neon-border-cyan {
+            border: 1px solid var(--primary-neon);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3), inset 0 0 8px rgba(0, 243, 255, 0.1);
+        }
+
+        .neon-border-purple {
+            border: 1px solid var(--secondary-neon);
+            box-shadow: 0 0 15px rgba(188, 0, 255, 0.3), inset 0 0 8px rgba(188, 0, 255, 0.1);
+        }
+
+        .neon-border-pink {
+            border: 1px solid var(--tertiary-neon);
+            box-shadow: 0 0 15px rgba(255, 0, 229, 0.3), inset 0 0 8px rgba(255, 0, 229, 0.1);
+        }
+
+        /* Decorative bracket components */
+        .corner-bracket {
+            position: relative;
+        }
+        .corner-bracket::before, .corner-bracket::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-color: var(--primary-neon);
+            border-style: solid;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .bracket-tl::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .bracket-br::after { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+        /* Animation utilities */
+        .scanline {
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, var(--primary-neon), transparent);
+            position: absolute;
+            top: 0;
+            animation: scan 6s linear infinite;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .glitch-hover:hover {
+            animation: glitch 0.35s cubic-bezier(.25,.46,.45,.94) both infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 1.5px); }
+            40% { transform: translate(-2px, -1.5px); }
+            60% { transform: translate(2px, 1.5px); }
+            80% { transform: translate(2px, -1.5px); }
+            100% { transform: translate(0); }
+        }
+
+        .floating {
+            animation: floating 5s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(0.5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .pulse-slow {
+            animation: pulse-slow 3s infinite;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.9; }
+        }
+
+        /* Webkit scrollbar adjustments */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05070a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #191c1f;
+            border-radius: 4px;
+            border: 2px solid #05070a;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-neon);
+        }
+    </style>
+</head>
+<body class="selection:bg-primary selection:text-background font-geist bg-background">
+
+    <!-- Scanning Overlay Background -->
+    <div class="fixed inset-0 pointer-events-none z-40 opacity-[0.02] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+
+    <!-- Main Navigation Header -->
+    <header class="sticky top-0 z-50 bg-background/50 backdrop-blur-[24px] border-b border-outline-variant/10 w-full px-6 lg:px-16 py-4 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <!-- Brand Logotype in Sora -->
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-gradient-to-tr from-secondary to-primary flex items-center justify-center font-sora font-extrabold text-background text-sm tracking-wider shadow-[0_0_15px_rgba(0,243,255,0.4)]">
+                    VN
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-sora font-extrabold text-white text-lg tracking-wider">V-GAME</span>
+                    <span class="font-geist text-[10px] text-primary tracking-[0.2em] font-semibold uppercase -mt-1">Virtual Nexus</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-8 font-geist text-sm font-semibold uppercase tracking-widest text-on-surface-variant">
+                <a href="#hero" class="hover:text-primary transition-colors duration-200">Terminal</a>
+                <a href="#games" class="hover:text-primary transition-colors duration-200">Game Matrix</a>
+                <a href="#tournaments" class="hover:text-primary transition-colors duration-200">Arena</a>
+                <a href="#store" class="hover:text-primary transition-colors duration-200">Synaptic Gear</a>
+            </nav>
+
+            <!-- Dashboard Stats Trigger and Connection Widget -->
+            <div class="flex items-center gap-4">
+                <div id="header-connection-status" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/20 font-geist text-xs">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" id="connection-indicator-dot"></span>
+                    <span class="text-on-surface-variant font-medium" id="connection-indicator-text">NEURAL LINK: OFF</span>
+                </div>
+                
+                <button onclick="toggleNeuralLink()" class="px-5 py-2 rounded-lg bg-transparent border border-primary text-primary font-sora font-bold text-xs uppercase tracking-widest hover:bg-primary/10 active:scale-95 transition-all shadow-[0_0_10px_rgba(0,243,255,0.1)] glitch-hover">
+                    ESTABLISH LINK
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Neural Link simulated authorization overlay modal -->
+    <div id="neural-link-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/95 backdrop-blur-[24px] hidden transition-opacity duration-300">
+        <div class="w-full max-w-lg glass-panel p-8 rounded-2xl relative overflow-hidden bracket-tl bracket-br corner-bracket neon-border-cyan">
+            <div class="scanline"></div>
+            
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="font-sora font-extrabold text-2xl uppercase text-white tracking-wide">SYNAPTIC SYNCHRONIZATION</h3>
+                    <p class="font-geist text-xs text-primary uppercase tracking-widest mt-1">Initializing Secure Brainwave Uplink</p>
+                </div>
+                <button onclick="closeNeuralLink()" class="text-on-surface-variant hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Uplink console status logger -->
+            <div class="bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-lg font-geist text-xs text-on-surface-variant mb-6 min-h-[160px] overflow-y-auto space-y-1.5" id="uplink-console">
+                <p class="text-primary font-bold">[SYSTEM] INITIATING DIRECT CORNEAL PROJECTOR LINK...</p>
+            </div>
+
+            <!-- High-Fidelity Sync Bar -->
+            <div class="mb-6 relative">
+                <div class="flex justify-between text-xs font-semibold tracking-wider uppercase mb-2">
+                    <span class="text-white">Neural Coherence Rate</span>
+                    <span class="text-primary" id="coherence-percentage">0%</span>
+                </div>
+                <div class="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden p-[2px] border border-outline-variant/30">
+                    <div id="sync-progress-bar" class="w-0 h-full bg-gradient-to-r from-primary via-secondary to-tertiary rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(0,243,255,0.8)]"></div>
+                </div>
+            </div>
+
+            <!-- Dynamic CTA controls inside authorization modal -->
+            <div class="flex gap-4">
+                <button id="modal-abort-btn" onclick="closeNeuralLink()" class="flex-1 py-3 bg-surface-container hover:bg-surface-container-high text-white font-sora font-semibold uppercase tracking-widest rounded-lg border border-outline-variant/20 text-xs transition-all duration-200">
+                    ABORT LINK
+                </button>
+                <button id="modal-sync-btn" onclick="startNeuralSynchronization()" class="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-background font-sora font-extrabold uppercase tracking-widest rounded-lg text-xs hover:shadow-[0_0_20px_rgba(0,243,255,0.5)] active:scale-95 transition-all">
+                    CONFIRM UPLINK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERO / Control Dashboard Section -->
+    <section id="hero" class="relative min-h-[90vh] flex items-center py-20 px-6 overflow-hidden">
+        <!-- Abstract glowing space backdrop grid -->
+        <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,243,255,0.03)_1px,transparent_1px),linear-gradient(to_right,rgba(0,243,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-secondary/5 blur-[120px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
+            <!-- Main Copy & Dashboard Highlights -->
+            <div class="lg:col-span-7 space-y-8">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant/20 rounded-full font-geist text-xs text-primary uppercase tracking-[0.2em]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#00f3ff]"></span>
+                    NEURAL LINK CLIENT V3.0
+                </div>
+                
+                <h1 class="font-sora font-extrabold text-5xl md:text-7xl text-white uppercase tracking-tighter leading-none">
+                    ENTER THE <span class="bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent">VIRTUAL</span> NEXUS
+                </h1>
+
+                <p class="font-geist text-lg text-on-surface-variant leading-relaxed max-w-xl">
+                    Plug directly into top-tier neural network gaming. Elevate your consciousness. Experience multi-layered glass layouts, interactive grid nodes, and total virtual mastery.
+                </p>
+
+                <!-- Core Terminal Quick Actions -->
+                <div class="flex flex-wrap gap-4 pt-4">
+                    <button onclick="toggleNeuralLink()" class="px-8 py-4 bg-gradient-to-r from-primary to-secondary text-background font-sora font-extrabold uppercase tracking-widest rounded-xl hover:shadow-[0_0_25px_rgba(0,243,255,0.6)] active:scale-95 transition-all glitch-hover">
+                        Sync Brainwave
+                    </button>
+                    <a href="#games" class="px-8 py-4 bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-white font-sora font-bold uppercase tracking-widest rounded-xl transition-all duration-200">
+                        View Game Grid
+                    </a>
+                </div>
+
+                <!-- Live HUD-Style Stats Counters -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-outline-variant/10">
+                    <div class="space-y-1">
+                        <div class="text-label-sm font-geist text-[10px] text-on-surface-variant uppercase tracking-widest">Active nodes</div>
+                        <div class="font-sora font-bold text-2xl text-white">12,492</div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-label-sm font-geist text-[10px] text-on-surface-variant uppercase tracking-widest">Synaptic Load</div>
+                        <div class="font-sora font-bold text-2xl text-primary" id="hud-synaptic-load">42%</div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-label-sm font-geist text-[10px] text-on-surface-variant uppercase tracking-widest">Net Latency</div>
+                        <div class="font-sora font-bold text-2xl text-secondary">0.02ms</div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-label-sm font-geist text-[10px] text-on-surface-variant uppercase tracking-widest">Prize Pool</div>
+                        <div class="font-sora font-bold text-2xl text-tertiary">$124,500</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Holographic Panel mockup / Right Side -->
+            <div class="lg:col-span-5 relative flex justify-center">
+                <!-- Outer floating ring grid -->
+                <div class="absolute inset-0 rounded-full border border-primary/10 animate-spin" style="animation-duration: 40s;"></div>
+                <div class="absolute inset-4 rounded-full border border-secondary/10 animate-spin" style="animation-duration: 20s; animation-direction: reverse;"></div>
+
+                <!-- High fidelity floating card showing neural diagnostics -->
+                <div class="relative glass-panel p-8 rounded-2xl w-full max-w-[360px] bracket-tl bracket-br corner-bracket neon-border-cyan floating">
+                    <div class="scanline"></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="font-geist text-[10px] text-primary uppercase tracking-[0.2em] font-semibold">Uplink Telemetry</span>
+                        <span class="w-2 h-2 rounded-full bg-primary pulse-slow"></span>
+                    </div>
+
+                    <!-- Holographic circular radar widget -->
+                    <div class="w-48 h-48 mx-auto mb-8 rounded-full border border-outline-variant/30 relative flex items-center justify-center bg-surface-container-lowest/50 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                        <div class="absolute inset-4 rounded-full border border-primary/20 animate-pulse"></div>
+                        <div class="absolute inset-10 rounded-full border-2 border-dashed border-secondary/20 animate-spin" style="animation-duration: 12s;"></div>
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(0,243,255,0.4)]">
+                            <span class="material-symbols-outlined text-background text-3xl font-bold">radar</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 font-geist text-xs">
+                        <div class="flex justify-between border-b border-outline-variant/10 pb-2">
+                            <span class="text-on-surface-variant">Cognitive Protocol</span>
+                            <span class="text-white font-bold uppercase tracking-wider">Secure V3</span>
+                        </div>
+                        <div class="flex justify-between border-b border-outline-variant/10 pb-2">
+                            <span class="text-on-surface-variant">User Profile</span>
+                            <span class="text-white font-bold uppercase tracking-wider" id="hud-user-profile">Neural_Guest</span>
+                        </div>
+                        <div class="flex justify-between pb-1">
+                            <span class="text-on-surface-variant">Synaptic Sync Status</span>
+                            <span class="text-primary font-bold uppercase tracking-wider" id="hud-sync-status">OFFLINE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DYNAMIC GAME LIBRARY -->
+    <section id="games" class="py-32 border-t border-outline-variant/10 bg-surface-container-lowest/20 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            
+            <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-8 mb-16">
+                <div>
+                    <span class="font-geist text-xs text-primary uppercase tracking-[0.2em] font-semibold mb-2 block">GAME MATRICES</span>
+                    <h2 class="font-sora font-extrabold text-4xl md:text-6xl text-white uppercase tracking-tighter">FEATURED <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">DIMENSIONS</span></h2>
+                </div>
+
+                <!-- Genre Filters -->
+                <div class="flex flex-wrap gap-3 font-geist text-xs tracking-widest uppercase" id="game-filters">
+                    <button onclick="filterGames('all')" class="filter-btn px-5 py-2.5 rounded-lg bg-primary text-background font-bold border border-primary transition-all duration-200">All Nodes</button>
+                    <button onclick="filterGames('combat')" class="filter-btn px-5 py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-outline-variant/10 transition-all duration-200">Combat</button>
+                    <button onclick="filterGames('velocity')" class="filter-btn px-5 py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-outline-variant/10 transition-all duration-200">Velocity</button>
+                    <button onclick="filterGames('hacker')" class="filter-btn px-5 py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-outline-variant/10 transition-all duration-200">Hacker</button>
+                    <button onclick="filterGames('vr')" class="filter-btn px-5 py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-outline-variant/10 transition-all duration-200">VR Immersive</button>
+                </div>
+            </div>
+
+            <!-- Game Card Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" id="games-grid">
+                
+                <!-- Game 1: Combat -->
+                <div class="game-card group relative aspect-[3/4] overflow-hidden rounded-2xl glass-panel hover:neon-border-cyan transition-all duration-500 hover:-translate-y-2" data-genre="combat">
+                    <div class="scanline"></div>
+                    <img alt="Combat Protocol Game Screen" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJ_-6VqpuLe7GI7A_Lwa47R-hLpkdBAcwWcKuVfrpYxP2uj0VRBDmTRboClDfiTOmPtZkmyZ2R2w6mLJR54U7kfXqibghQx7ehZ351uHmpkA3TPsoJT-Da_FM12fwefKU_kCVv3lC-FEGZ72v-m_IxH4pzwOk8NOlO47xNudn0e4yCXjeLOyIITKZYNk3QBcqXD9i8KJ6hEmntwU1pnPr4YVs2B08gPZ420VCZwtmln6H5duSYu3Q7dgTtedclTMcv7lEx38IM8yI"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-95"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 w-full space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="px-2.5 py-1 bg-primary text-background text-[9px] font-extrabold uppercase tracking-widest font-geist rounded">Combat Protocol</span>
+                            <div class="flex items-center gap-1 text-primary">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-geist text-xs font-bold">4.9</span>
+                            </div>
+                        </div>
+                        <h3 class="font-sora font-bold text-2xl uppercase text-white tracking-wide">CYBER STRIKE: PROTOCON</h3>
+                        <button onclick="launchMockGame('CYBER STRIKE: PROTOCON')" class="w-full py-3 bg-transparent border border-primary text-primary font-sora font-extrabold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-background transition-all rounded-lg">
+                            LOAD MATRIX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game 2: Velocity -->
+                <div class="game-card group relative aspect-[3/4] overflow-hidden rounded-2xl glass-panel-purple hover:neon-border-purple transition-all duration-500 hover:-translate-y-2" data-genre="velocity">
+                    <div class="scanline"></div>
+                    <img alt="Esports underground high-speed neon car game screenshot" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCO4S_GGPA0A-oaP2woZEddturJaynotrGTdDilWKq5xAtijEThGTqIocq4YnpNCmF8O869O322Cb2jmRN6KUWTU5dXP-lOSwUR1wOek2RcCzl5QGcWW0p7klBIK9PhG5OjKMoaHSdnCxpEa8dlqJzMH0EkFM2by8WndCvja-79L472tsgZkZe5CWQY0zZR7dvaQfy-dfCDF-e9znG6NWuMYqt-JCkfkXt7lWl1HCVGKS677oUnSVrEZzRKUrYE7YRlZ3ngmqAvhrI"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-95"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 w-full space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="px-2.5 py-1 bg-secondary text-white text-[9px] font-extrabold uppercase tracking-widest font-geist rounded">Velocity</span>
+                            <div class="flex items-center gap-1 text-secondary">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-geist text-xs font-bold">4.8</span>
+                            </div>
+                        </div>
+                        <h3 class="font-sora font-bold text-2xl uppercase text-white tracking-wide">NEON DRIFT: SYNAPSE</h3>
+                        <button onclick="launchMockGame('NEON DRIFT: SYNAPSE')" class="w-full py-3 bg-transparent border border-secondary text-secondary font-sora font-extrabold text-xs uppercase tracking-widest group-hover:bg-secondary group-hover:text-white transition-all rounded-lg">
+                            LOAD MATRIX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game 3: Hacker / Survival -->
+                <div class="game-card group relative aspect-[3/4] overflow-hidden rounded-2xl glass-panel hover:neon-border-cyan transition-all duration-500 hover:-translate-y-2" data-genre="hacker">
+                    <div class="scanline"></div>
+                    <img alt="Hacker interface terminal with visual cybernetic system matrices screenshot" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB29yLRFeQ6-2AECMhQ84dmFR7xwV7m8Jd4AU3LDkqhLAqK3pq-y36uLqxafpbaOxNuH7EauXX8ilR3Eq0qRVXvNNhEPmTf-LJQMxCBXCIN5a2DA7RkFYeJ0C1h7C_kZclJfSCXej073b2nZ5h8MkdQLPqaaX2DdOXdeHharG0ZhNgR3x6dCM7700FEnNzytfPHv4VXq6fHy0bpQmRdrAN0XTUtxgB9lLgbK10ioQF83ShWCz03yoWC6DOVZZIDtWrKQDNx5OxHvk"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-95"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 w-full space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="px-2.5 py-1 bg-primary text-background text-[9px] font-extrabold uppercase tracking-widest font-geist rounded">Hacking Network</span>
+                            <div class="flex items-center gap-1 text-primary">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-geist text-xs font-bold">4.7</span>
+                            </div>
+                        </div>
+                        <h3 class="font-sora font-bold text-2xl uppercase text-white tracking-wide">GRID HACKER: INTRUSION</h3>
+                        <button onclick="launchMockGame('GRID HACKER: INTRUSION')" class="w-full py-3 bg-transparent border border-primary text-primary font-sora font-extrabold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-background transition-all rounded-lg">
+                            LOAD MATRIX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game 4: VR Immersive Bioluminescent -->
+                <div class="game-card group relative aspect-[3/4] overflow-hidden rounded-2xl glass-panel-pink hover:neon-border-pink transition-all duration-500 hover:-translate-y-2" data-genre="vr">
+                    <div class="scanline"></div>
+                    <img alt="Bioluminescent alien landscape VR immersive gameplay screen" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACIybPECF8Dej2ORuJBZsfCx-RSHQbJ4MBiiDbirFLS64dKnJTQZnpBMRbGRxPSsob20CwNGTsXln-JIt-3kJ24pmHPiJWyf_ze49wPzPDB8WrELt0jcRarTNshIOzEZqzRdMgkgIXm3Rs_g9zy8ek0odq1M6SKEGN133SE4qMD9A3MFUDS8SxzydUFj8tQh5Cf3ThzV_3bQ79K9-NBxmBtJNmRdv5B-enEegcLIcQtrORjUI5u8aziJzUk6R1WgHHEcnQgF3JYqE"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent opacity-95"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 w-full space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="px-2.5 py-1 bg-tertiary text-white text-[9px] font-extrabold uppercase tracking-widest font-geist rounded">VR Immersive</span>
+                            <div class="flex items-center gap-1 text-tertiary">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-geist text-xs font-bold">5.0</span>
+                            </div>
+                        </div>
+                        <h3 class="font-sora font-bold text-2xl uppercase text-white tracking-wide">VOID WALKER: RETRIBUTION</h3>
+                        <button onclick="launchMockGame('VOID WALKER: RETRIBUTION')" class="w-full py-3 bg-transparent border border-tertiary text-tertiary font-sora font-extrabold text-xs uppercase tracking-widest group-hover:bg-tertiary group-hover:text-white transition-all rounded-lg">
+                            LOAD MATRIX
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE TOURNAMENTS & RANKING ARENA -->
+    <section id="tournaments" class="py-32 bg-surface-container-lowest border-t border-outline-variant/10 relative overflow-hidden">
+        <!-- Background Neon Line design -->
+        <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-40 shadow-[0_0_10px_var(--primary-neon)]"></div>
+        <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent opacity-40 shadow-[0_0_10px_var(--secondary-neon)]"></div>
+
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="font-sora font-extrabold text-4xl text-center text-white uppercase tracking-wider mb-20">
+                <span class="material-symbols-outlined align-middle mr-3 text-primary animate-pulse">radar_global</span>
+                LIVE NEXUS ARENA
+            </h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                
+                <!-- Tournament 1: Combat Cup (Left) -->
+                <div class="lg:col-span-6 glass-panel p-8 rounded-2xl border-l-4 border-l-primary relative overflow-hidden bracket-tl bracket-br corner-bracket hover:shadow-[0_0_30px_rgba(0,243,255,0.1)] transition-all duration-300">
+                    <div class="scanline"></div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse shadow-[0_0_8px_#ef4444]"></span>
+                        <span class="font-geist text-xs font-extrabold text-primary uppercase tracking-[0.25em]">Live Synaptic Feed</span>
+                    </div>
+
+                    <h3 class="font-sora font-bold text-3xl text-white uppercase tracking-tight mb-2">CYBER CUP: CHAMPIONSHIP</h3>
+                    <p class="font-geist text-sm text-on-surface-variant mb-8">System node synchronization in sync progress. High-intensity neural matchup.</p>
+
+                    <!-- Real-Time Metrics -->
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <div class="p-4 bg-surface-container rounded-lg border border-outline-variant/10 text-center">
+                            <p class="font-geist text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">Prize Matrix</p>
+                            <p class="font-sora font-bold text-lg text-primary">$80,000</p>
+                        </div>
+                        <div class="p-4 bg-surface-container rounded-lg border border-outline-variant/10 text-center">
+                            <p class="font-geist text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">Uplink Users</p>
+                            <p class="font-sora font-bold text-lg text-white">4.8k/10k</p>
+                        </div>
+                        <div class="p-4 bg-surface-container rounded-lg border border-outline-variant/10 text-center">
+                            <p class="font-geist text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">Link Closes</p>
+                            <p class="font-sora font-bold text-lg text-secondary" id="tournament-timer">03:44:59</p>
+                        </div>
+                    </div>
+
+                    <button onclick="registerForTournament('CYBER CUP: CHAMPIONSHIP')" class="w-full py-4 bg-gradient-to-r from-primary to-secondary text-background font-sora font-extrabold text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all rounded-xl active:scale-95 flex items-center justify-center gap-2">
+                        JOIN NEURAL BRACKET <span class="material-symbols-outlined font-bold text-sm">double_arrow</span>
+                    </button>
+                </div>
+
+                <!-- Live Standings / Leaderboard (Right) -->
+                <div class="lg:col-span-6 glass-panel-purple p-8 rounded-2xl relative border-t-2 border-t-secondary">
+                    <div class="flex justify-between items-center mb-8">
+                        <h4 class="font-sora font-bold text-xl uppercase tracking-wider text-white">SYNAPTIC STANDINGS</h4>
+                        <span class="px-2.5 py-1 rounded bg-secondary/20 text-secondary border border-secondary/30 font-geist text-[10px] font-bold uppercase tracking-widest">Active League</span>
+                    </div>
+
+                    <!-- Standing List items -->
+                    <div id="leaderboard-items-container" class="space-y-4 font-geist text-sm">
+                        <!-- User 1 -->
+                        <div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl border border-outline-variant/10 hover:neon-border-cyan transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <span class="font-sora font-extrabold text-primary">01</span>
+                                <img alt="Top player avatar" class="w-8 h-8 rounded-full border border-primary shadow-[0_0_8px_rgba(0,243,255,0.3)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpxLiKH8GEmvbS731PN9hkrOJ2U5WuRVduytfbpZ9K3ln1XrmU1N0XnChs0wwuvimozNuBcdntxHL7Sn_uZeOR13TraA4dTuW3gBUjnQlZbmwJ5Fyg6V7jRflXSVtFFYhWkZLq_UTmj9gHxbcrsoyU7RkNvMXQn7JmbRj6Rq9erJvK9_S-51EBJzCoJh1kIqY4ZJmw4pqlZ8-iG0B1ameHjFyaDpsxlD1sTwTBLaA8qgIRW5dk1UlcR9XuucGwD_YY6gjlGRSHtnk"/>
+                                <span class="font-bold text-white uppercase tracking-wider">Valkyrie_X</span>
+                            </div>
+                            <span class="font-sora font-extrabold text-white text-xs">24,980 pts</span>
+                        </div>
+
+                        <!-- User 2 -->
+                        <div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl border border-outline-variant/10 hover:neon-border-cyan transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <span class="font-sora font-extrabold text-secondary">02</span>
+                                <img alt="Rank 2 player avatar" class="w-8 h-8 rounded-full border border-secondary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy1NKOGP2SpWpYaFXlrIjpvgRnJ3odUmPVPCr_hpmHQ7xQlyGjA6SGeUbTisVkQQ6WPoKPLwTFmEj_J4_COLnWATmTjHqFbAHkTwDf9LS9TBdy3NFKGIYhdmO1HPYLtulzZh2KHl-MNbwsVmqUB0yfE16XG5zuLVEE5zeyjfXyt_umoqufzvpZlSImNeJ59yyml1lTwk7_8uTtJ-sCt-EW2JTwvJNaBwIuVTlDm38PphZvH9FqLDRvxblZ0fwrqWnZSvxIr_h6kwI"/>
+                                <span class="font-bold text-white uppercase tracking-wider">Ghost_Rider_99</span>
+                            </div>
+                            <span class="font-sora font-extrabold text-white text-xs">23,120 pts</span>
+                        </div>
+
+                        <!-- User 3 -->
+                        <div class="flex items-center justify-between p-3.5 bg-surface-container rounded-xl border border-outline-variant/10 hover:neon-border-cyan transition-all duration-300">
+                            <div class="flex items-center gap-4">
+                                <span class="font-sora font-extrabold text-on-surface-variant">03</span>
+                                <img alt="Rank 3 player avatar" class="w-8 h-8 rounded-full border border-outline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH_umsXQ1trtrqo1GpCCaInGElhNxv8YJIB6hAbmmfdtJ8Oi4Z17i61AsN2cbtgqINfJE1D92imu1MMZR8aUe22r2vEGBLrKrKiYxWuEpoMh6-CvChSH-7hqNBcF_HJsSZPaCYlBdqkpT6xzXC7DtAvZSGrww_FkAKBrOGIJ9jLV896IcujxUOoZoPyJu4pPEkGvGFK-EoGtcGUWHKrIJibYofobHUOFt6kCyx91zWsxtXrzxC4svzMkatY3Q7WhUnQQUqwf3fYqw"/>
+                                <span class="font-bold text-white uppercase tracking-wider">Neon_Sage</span>
+                            </div>
+                            <span class="font-sora font-extrabold text-white text-xs">21,450 pts</span>
+                        </div>
+
+                        <!-- Client User Row (Highlighted dynamically if connected) -->
+                        <div id="leaderboard-user-row" class="flex items-center justify-between p-3.5 rounded-xl border border-dashed border-outline-variant/30 bg-surface-container-low transition-all duration-500">
+                            <div class="flex items-center gap-4">
+                                <span class="font-sora font-extrabold text-on-surface-variant" id="user-rank-number">--</span>
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center font-sora text-background font-extrabold text-xs">NG</div>
+                                <span class="font-bold text-on-surface-variant uppercase tracking-wider" id="user-username-text">Neural_Guest</span>
+                            </div>
+                            <span class="font-sora font-extrabold text-on-surface-variant text-xs" id="user-points-text">-- pts</span>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- PREMIUM SYNAPTIC GEAR SHOWCASE -->
+    <section id="store" class="py-32 relative overflow-hidden">
+        <div class="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-tertiary/5 rounded-full blur-[140px] pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                <!-- Left Details -->
+                <div class="lg:col-span-5 space-y-8">
+                    <span class="font-geist text-xs text-secondary uppercase tracking-[0.2em] font-semibold block">Holographic Store</span>
+                    <h2 class="font-sora font-extrabold text-4xl md:text-5xl text-white uppercase tracking-tight leading-none">PREMIUM <span class="bg-gradient-to-r from-secondary to-tertiary bg-clip-text text-transparent">SYNAPTIC</span> GEAR</h2>
+                    <p class="font-geist text-base text-on-surface-variant leading-relaxed">
+                        Complete your immersion with neural-link controllers, quantum gaming decks, and haptic feedback headsets customized with real-time neon light emission controls.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4 font-geist text-sm">
+                            <span class="material-symbols-outlined text-secondary">hdr_strong</span>
+                            <span class="uppercase tracking-widest font-semibold text-white">Quantum Haptic Feedback</span>
+                        </div>
+                        <div class="flex items-center gap-4 font-geist text-sm">
+                            <span class="material-symbols-outlined text-secondary">hdr_strong</span>
+                            <span class="uppercase tracking-widest font-semibold text-white">Direct Synaptic Projection</span>
+                        </div>
+                        <div class="flex items-center gap-4 font-geist text-sm">
+                            <span class="material-symbols-outlined text-secondary">hdr_strong</span>
+                            <span class="uppercase tracking-widest font-semibold text-white">16K Bio-Visual Resolution</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Store cards -->
+                <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <!-- Gear Card 1 -->
+                    <div class="glass-panel-purple p-8 rounded-2xl relative group hover:neon-border-purple transition-all duration-500 hover:-translate-y-2">
+                        <div class="scanline"></div>
+                        <div class="aspect-square w-full rounded-xl overflow-hidden bg-surface-container-lowest/60 border border-outline-variant/10 mb-6 flex items-center justify-center relative">
+                            <img alt="Futuristic VR Visor Haptic Gear" class="w-48 h-48 object-contain floating" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI4rD0BaxHmx_hGhQLVYJPABKx1WpnEVJn3rfl59wa4Lb-dxb04nikcwBPqivH2swrJKvgxMhbzjkxPtOKLoZyKrwoFuDyMAuzYGgSnLZ2Ce8izXPrb4MXN7le3Y4GSsv6WspsLxf2rSXltRO-12zkwQcCVoFVjZoAViGSJIRfuXYaE6sSC3jYaWNweqDJcHbVOgjhRWdt40iaFsr9xaGlNaH1VW3F7f5ZB2fdb1oM6y1JYsubEoEIRMVQ21nY-b86dG9TA9bG7E4"/>
+                            
+                            <!-- Dynamic Interactive Light Selector widget inside card -->
+                            <div class="absolute bottom-3 right-3 flex gap-1.5 bg-background/80 backdrop-blur p-1.5 rounded-lg border border-outline-variant/20 z-20">
+                                <span onclick="changeGearColor(this, 'cyan')" class="w-3.5 h-3.5 rounded-full bg-[#00f3ff] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                                <span onclick="changeGearColor(this, 'purple')" class="w-3.5 h-3.5 rounded-full bg-[#bc00ff] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                                <span onclick="changeGearColor(this, 'pink')" class="w-3.5 h-3.5 rounded-full bg-[#ff00e5] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-geist text-[10px] text-secondary font-bold uppercase tracking-widest">Neural Link Visor</span>
+                            <span class="font-sora font-extrabold text-white">$449</span>
+                        </div>
+                        <h4 class="font-sora font-bold text-xl uppercase text-white mb-4">NEXUS VISOR V3</h4>
+                        <button onclick="purchaseGear('NEXUS VISOR V3')" class="w-full py-3 bg-surface-container hover:bg-secondary text-on-surface hover:text-white font-sora font-extrabold text-xs uppercase tracking-widest transition-all rounded-lg border border-outline-variant/10">
+                            ACQUIRE UNIT
+                        </button>
+                    </div>
+
+                    <!-- Gear Card 2 -->
+                    <div class="glass-panel-pink p-8 rounded-2xl relative group hover:neon-border-pink transition-all duration-500 hover:-translate-y-2">
+                        <div class="scanline"></div>
+                        <div class="aspect-square w-full rounded-xl overflow-hidden bg-surface-container-lowest/60 border border-outline-variant/10 mb-6 flex items-center justify-center relative">
+                            <!-- Custom CSS-based clean gamepad graphics vector -->
+                            <div class="w-40 h-40 flex items-center justify-center relative floating">
+                                <div class="w-36 h-20 bg-surface-container-high rounded-full border-2 border-outline-variant/50 relative shadow-2xl flex items-center justify-between px-6">
+                                    <!-- D-Pad -->
+                                    <div class="w-8 h-8 relative">
+                                        <div class="absolute inset-0 bg-outline rounded"></div>
+                                        <div class="absolute left-3 top-0 bottom-0 w-2 bg-background rounded-sm"></div>
+                                        <div class="absolute top-3 left-0 right-0 h-2 bg-background rounded-sm"></div>
+                                    </div>
+                                    <!-- Action Buttons -->
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <div class="w-3 h-3 rounded-full bg-primary shadow-[0_0_5px_var(--primary-neon)]"></div>
+                                        <div class="w-3 h-3 rounded-full bg-secondary shadow-[0_0_5px_var(--secondary-neon)]"></div>
+                                        <div class="w-3 h-3 rounded-full bg-tertiary shadow-[0_0_5px_var(--tertiary-neon)]"></div>
+                                        <div class="w-3 h-3 rounded-full bg-white"></div>
+                                    </div>
+                                    <!-- Joysticks -->
+                                    <div class="absolute bottom-1 left-12 w-6 h-6 rounded-full bg-background border border-outline/20"></div>
+                                    <div class="absolute bottom-1 right-12 w-6 h-6 rounded-full bg-background border border-outline/20"></div>
+                                </div>
+                            </div>
+
+                            <div class="absolute bottom-3 right-3 flex gap-1.5 bg-background/80 backdrop-blur p-1.5 rounded-lg border border-outline-variant/20 z-20">
+                                <span onclick="changeGearColor(this, 'cyan')" class="w-3.5 h-3.5 rounded-full bg-[#00f3ff] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                                <span onclick="changeGearColor(this, 'purple')" class="w-3.5 h-3.5 rounded-full bg-[#bc00ff] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                                <span onclick="changeGearColor(this, 'pink')" class="w-3.5 h-3.5 rounded-full bg-[#ff00e5] cursor-pointer border border-white/20 hover:scale-110 active:scale-90 transition-transform"></span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-geist text-[10px] text-tertiary font-bold uppercase tracking-widest">Haptic Controller</span>
+                            <span class="font-sora font-extrabold text-white">$189</span>
+                        </div>
+                        <h4 class="font-sora font-bold text-xl uppercase text-white mb-4">CYBERPAD PRO</h4>
+                        <button onclick="purchaseGear('CYBERPAD PRO')" class="w-full py-3 bg-surface-container hover:bg-tertiary text-on-surface hover:text-white font-sora font-extrabold text-xs uppercase tracking-widest transition-all rounded-lg border border-outline-variant/10">
+                            ACQUIRE UNIT
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- PREMIUM ENCRYPTED FOOTER -->
+    <footer class="bg-surface-container-lowest border-t border-outline-variant/20 pt-24 pb-12 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            
+            <!-- Branding column -->
+            <div class="space-y-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gradient-to-tr from-secondary to-primary flex items-center justify-center font-sora font-extrabold text-background text-sm tracking-wider">
+                        VN
+                    </div>
+                    <span class="font-sora font-extrabold text-white text-lg tracking-wider">V-GAME</span>
+                </div>
+                <p class="font-geist text-sm text-on-surface-variant leading-relaxed">
+                    The premier neural networking gaming portal. Experience premium cyberpunk visual control. Direct uplink guaranteed.
+                </p>
+                <div class="flex gap-4">
+                    <a href="#" class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-lg hover:border-primary hover:text-primary transition-all duration-200">
+                        <span class="material-symbols-outlined text-sm">language</span>
+                    </a>
+                    <a href="#" class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-lg hover:border-primary hover:text-primary transition-all duration-200">
+                        <span class="material-symbols-outlined text-sm">hub</span>
+                    </a>
+                    <a href="#" class="w-10 h-10 flex items-center justify-center border border-outline-variant/20 rounded-lg hover:border-primary hover:text-primary transition-all duration-200">
+                        <span class="material-symbols-outlined text-sm">terminal</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Col 2: Navigation -->
+            <div>
+                <h4 class="font-sora font-bold text-white uppercase text-sm tracking-wider mb-6 border-b border-primary w-fit pb-1">Protocols</h4>
+                <ul class="space-y-3 font-geist text-sm text-on-surface-variant">
+                    <li><a href="#hero" class="hover:text-primary transition-colors">Terminal Console</a></li>
+                    <li><a href="#games" class="hover:text-primary transition-colors">Game Matrix Grid</a></li>
+                    <li><a href="#tournaments" class="hover:text-primary transition-colors">Combat Arena</a></li>
+                    <li><a href="#store" class="hover:text-primary transition-colors">Synaptic Gear Store</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Resources -->
+            <div>
+                <h4 class="font-sora font-bold text-white uppercase text-sm tracking-wider mb-6 border-b border-secondary w-fit pb-1">Directives</h4>
+                <ul class="space-y-3 font-geist text-sm text-on-surface-variant">
+                    <li><a href="#" class="hover:text-secondary transition-colors">Privacy Encryption</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors">Syndicate Terms</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors">Synaptic Uplink Status</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors">Support Port</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 4: Encrypted Uplink Newsletter -->
+            <div class="space-y-6">
+                <h4 class="font-sora font-bold text-white uppercase text-sm tracking-wider mb-6 border-b border-tertiary w-fit pb-1">Synaptic Sync Updates</h4>
+                <p class="font-geist text-sm text-on-surface-variant">Receive secure, end-to-end encrypted neural updates and reward keys.</p>
+                <form onsubmit="subscribeNeuralUpdates(event)" class="relative">
+                    <input class="w-full bg-[#05070a]/60 border border-outline-variant/30 focus:border-primary focus:ring-0 text-white placeholder:text-outline p-3 rounded-lg font-geist text-xs transition-all duration-300" placeholder="Synaptic Address / Email" type="email" required/>
+                    <button class="absolute right-2 top-1.5 bottom-1.5 px-3.5 bg-primary text-background font-sora font-bold text-[10px] uppercase rounded hover:shadow-[0_0_10px_var(--primary-neon)] transition-all" type="submit">
+                        LINK
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-6 pt-12 border-t border-outline-variant/10 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <p class="font-geist text-[10px] text-on-surface-variant uppercase tracking-[0.2em]">© 2026 V-GAME NEXUS PROTOCOL. SYNAPTIC DIRECT LINK SECURED.</p>
+            <div class="flex items-center gap-3 font-geist text-[10px] text-on-surface-variant">
+                <span>SYSTEM LINK STATE:</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-green-500/10 border border-green-500/20 text-green-500">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_6px_#22c55e]"></span>
+                    OPERATIONAL
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT STATE ENGINE -->
+    <script>
+        // Core Connection States: DISCONNECTED -> CONNECTING -> CONNECTED
+        let neuralLinkState = 'DISCONNECTED';
+        let coherenceLevel = 0;
+        let consoleInterval;
+        let syncProgressTimeout;
+
+        // Firebase Integration Setup
+        const firebaseConfig = {
+          apiKey: "AIzaSyCMa7C-Z1FgyyXE-WqjQEYVfb3vQyocxks",
+          authDomain: "game-f464c.firebaseapp.com",
+          projectId: "game-f464c",
+          storageBucket: "game-f464c.firebasestorage.app",
+          messagingSenderId: "589635684813",
+          appId: "1:589635684813:web:ff481ee4fe06e229e49c84"
+        };
+        
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("[FIREBASE] Uplink established successfully!");
+        } catch (e) {
+            console.error("[FIREBASE] Connection failed:", e);
+        }
+
+        // Dynamic System telemetries
+        setInterval(() => {
+            if (neuralLinkState === 'CONNECTED') {
+                const randomLoad = Math.floor(Math.random() * 20) + 55; // 55% - 75%
+                document.getElementById('hud-synaptic-load').innerText = randomLoad + '%';
+            } else {
+                const randomLoad = Math.floor(Math.random() * 10) + 30; // 30% - 40%
+                document.getElementById('hud-synaptic-load').innerText = randomLoad + '%';
+            }
+        }, 3000);
+
+        function toggleNeuralLink() {
+            if (neuralLinkState === 'CONNECTED') {
+                // If already connected, disconnect it
+                disconnectNeuralLink();
+            } else {
+                // Show modal overlay
+                const modal = document.getElementById('neural-link-modal');
+                modal.classList.remove('hidden');
+                resetSynchronizationModal();
+            }
+        }
+
+        function closeNeuralLink() {
+            document.getElementById('neural-link-modal').classList.add('hidden');
+            resetSynchronizationModal();
+        }
+
+        function resetSynchronizationModal() {
+            clearInterval(consoleInterval);
+            clearTimeout(syncProgressTimeout);
+            coherenceLevel = 0;
+            document.getElementById('coherence-percentage').innerText = '0%';
+            document.getElementById('sync-progress-bar').style.width = '0%';
+            
+            const consoleBox = document.getElementById('uplink-console');
+            consoleBox.innerHTML = '<p class="text-primary font-bold">[SYSTEM] INITIATING DIRECT CORNEAL PROJECTOR LINK...</p>';
+            
+            document.getElementById('modal-sync-btn').disabled = false;
+            document.getElementById('modal-sync-btn').innerText = 'CONFIRM UPLINK';
+            document.getElementById('modal-abort-btn').innerText = 'ABORT LINK';
+        }
+
+        function startNeuralSynchronization() {
+            document.getElementById('modal-sync-btn').disabled = true;
+            document.getElementById('modal-sync-btn').innerText = 'SYNCHRONIZING...';
+            document.getElementById('modal-abort-btn').innerText = 'ABORT';
+
+            const consoleBox = document.getElementById('uplink-console');
+            
+            const logs = [
+                "[0.02s] Scanning cerebral frequency...",
+                "[0.45s] Brainwave pattern detected: ALPHA/BETA",
+                "[0.88s] Tuning quantum neuro-transceiver...",
+                "[1.20s] Aligning synaptic gates 1 through 12...",
+                "[1.75s] Calibrating retinal laser projector...",
+                "[2.10s] Securing bio-encryption token...",
+                "[2.80s] Link coherence matrix optimal.",
+                "[3.20s] Syncing user profile 'Neural_Agent'...",
+                "[3.80s] direct neural connection established successfully."
+            ];
+
+            let logIndex = 0;
+            consoleInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const newLog = document.createElement('p');
+                    newLog.innerText = logs[logIndex];
+                    if (logIndex === logs.length - 1) {
+                        newLog.className = 'text-green-400 font-bold';
+                    }
+                    consoleBox.appendChild(newLog);
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(consoleInterval);
+                }
+            }, 450);
+
+            // Coherence Percentage Progression
+            let coherenceInterval = setInterval(() => {
+                if (coherenceLevel < 100) {
+                    coherenceLevel += 4;
+                    if (coherenceLevel > 100) coherenceLevel = 100;
+                    document.getElementById('coherence-percentage').innerText = coherenceLevel + '%';
+                    document.getElementById('sync-progress-bar').style.width = coherenceLevel + '%';
+                } else {
+                    clearInterval(coherenceInterval);
+                    completeNeuralSync();
+                }
+            }, 180);
+        }
+
+        function completeNeuralSync() {
+            neuralLinkState = 'CONNECTED';
+            
+            // Update modal buttons
+            document.getElementById('modal-sync-btn').innerText = 'LINK SECURED';
+            document.getElementById('modal-abort-btn').innerText = 'ENTER NEXUS';
+            document.getElementById('modal-abort-btn').onclick = () => {
+                closeNeuralLink();
+            };
+
+            // Update header indicators
+            const dot = document.getElementById('connection-indicator-dot');
+            dot.classList.remove('bg-red-500', 'shadow-[0_0_8px_#ef4444]');
+            dot.classList.add('bg-green-500', 'shadow-[0_0_8px_#22c55e]');
+            document.getElementById('connection-indicator-text').innerText = 'NEURAL LINK: ACTIVE';
+
+            // Get unique transceiver ID (Nickname)
+            const username = prompt("[SYSTEM] ENTER SYNAPTIC DECK NICKNAME:", "Neural_Agent") || "Neural_Agent";
+            const userScore = Math.floor(Math.random() * 5000) + 15000; // 15,000 to 20,000 pts
+
+            // Update hero diagnostics
+            document.getElementById('hud-user-profile').innerText = username;
+            document.getElementById('hud-user-profile').className = 'text-primary font-bold uppercase tracking-wider';
+            document.getElementById('hud-sync-status').innerText = 'SECURE CONNECTED';
+            document.getElementById('hud-sync-status').className = 'text-green-400 font-extrabold uppercase tracking-wider';
+
+            // Write active session directly to Firebase Firestore
+            if (db) {
+                db.collection("leaderboard").add({
+                    username: username,
+                    score: userScore,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    console.log("[FIREBASE] Saved user score to Firestore!");
+                }).catch(err => {
+                    console.error("[FIREBASE] Error saving score:", err);
+                });
+            }
+
+            // Update leaderboard client row
+            document.getElementById('user-rank-number').innerText = '04';
+            document.getElementById('user-rank-number').className = 'font-sora font-extrabold text-primary';
+            document.getElementById('user-username-text').innerText = `${username} (You)`;
+            document.getElementById('user-username-text').className = 'font-bold text-white uppercase tracking-wider';
+            document.getElementById('user-points-text').innerText = `${userScore.toLocaleString()} pts`;
+            document.getElementById('user-points-text').className = 'font-sora font-extrabold text-primary text-xs';
+            
+            const userRow = document.getElementById('leaderboard-user-row');
+            userRow.classList.remove('border-outline-variant/30', 'bg-surface-container-low');
+            userRow.classList.add('neon-border-cyan', 'bg-surface-container-high');
+        }
+
+        function disconnectNeuralLink() {
+            neuralLinkState = 'DISCONNECTED';
+
+            // Reset header indicators
+            const dot = document.getElementById('connection-indicator-dot');
+            dot.classList.remove('bg-green-500', 'shadow-[0_0_8px_#22c55e]');
+            dot.classList.add('bg-red-500', 'shadow-[0_0_8px_#ef4444]');
+            document.getElementById('connection-indicator-text').innerText = 'NEURAL LINK: OFF';
+
+            // Reset hero diagnostics
+            document.getElementById('hud-user-profile').innerText = 'Neural_Guest';
+            document.getElementById('hud-user-profile').className = 'text-white font-bold uppercase tracking-wider';
+            document.getElementById('hud-sync-status').innerText = 'OFFLINE';
+            document.getElementById('hud-sync-status').className = 'text-primary font-bold uppercase tracking-wider';
+
+            // Reset leaderboard client row
+            document.getElementById('user-rank-number').innerText = '--';
+            document.getElementById('user-rank-number').className = 'font-sora font-extrabold text-on-surface-variant';
+            document.getElementById('user-username-text').innerText = 'Neural_Guest';
+            document.getElementById('user-username-text').className = 'font-bold text-on-surface-variant uppercase tracking-wider';
+            document.getElementById('user-points-text').innerText = '-- pts';
+            document.getElementById('user-points-text').className = 'font-sora font-extrabold text-on-surface-variant text-xs';
+            
+            const userRow = document.getElementById('leaderboard-user-row');
+            userRow.classList.add('border-outline-variant/30', 'bg-surface-container-low');
+            userRow.classList.remove('neon-border-cyan', 'bg-surface-container-high');
+
+            alert('Neural Sync connection severed.');
+        }
+
+        // Real-time Leaderboard updates from Firestore
+        function initRealtimeLeaderboard() {
+            if (!db) return;
+            
+            const leaderboardContainer = document.getElementById('leaderboard-items-container');
+            if (!leaderboardContainer) return;
+            
+            db.collection("leaderboard")
+              .orderBy("score", "desc")
+              .limit(3)
+              .onSnapshot((snapshot) => {
+                  if (snapshot.empty) {
+                      console.log("[FIREBASE] Leaderboard is empty. Dynamic rows will populate when links secure.");
+                      return;
+                  }
+                  
+                  // Clear first 3 items and load dynamic database entries!
+                  // We hold the last element (Client User Row) as static until highlighted
+                  const staticRow = document.getElementById('leaderboard-user-row');
+                  leaderboardContainer.innerHTML = '';
+                  
+                  let rank = 1;
+                  snapshot.forEach((doc) => {
+                      const data = doc.data();
+                      const username = data.username || "Anonymous";
+                      const score = data.score || 0;
+                      
+                      const rankStr = rank.toString().padStart(2, '0');
+                      let rankColor = 'text-on-surface-variant';
+                      
+                      if (rank === 1) {
+                          rankColor = 'text-primary';
+                      } else if (rank === 2) {
+                          rankColor = 'text-secondary';
+                      } else if (rank === 3) {
+                          rankColor = 'text-tertiary';
+                      }
+                      
+                      const activeUserText = document.getElementById('hud-user-profile').innerText;
+                      const isCurrentUser = (username === activeUserText && neuralLinkState === 'CONNECTED');
+                      
+                      const card = document.createElement('div');
+                      card.className = `flex items-center justify-between p-3.5 rounded-xl border ${isCurrentUser ? 'neon-border-cyan bg-surface-container-high' : 'bg-surface-container border-outline-variant/10 hover:neon-border-cyan'} transition-all duration-300`;
+                      card.innerHTML = `
+                          <div class="flex items-center gap-4">
+                              <span class="font-sora font-extrabold ${rankColor}">${rankStr}</span>
+                              <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center font-sora text-background font-extrabold text-xs">
+                                  ${username.substring(0, 2).toUpperCase()}
+                              </div>
+                              <span class="font-bold text-white uppercase tracking-wider">${username} ${isCurrentUser ? '(You)' : ''}</span>
+                          </div>
+                          <span class="font-sora font-extrabold text-white text-xs">${score.toLocaleString()} pts</span>
+                      `;
+                      
+                      leaderboardContainer.appendChild(card);
+                      rank++;
+                  });
+                  
+                  // Append the user's dedicated interactive state row at the bottom
+                  leaderboardContainer.appendChild(staticRow);
+              }, (error) => {
+                  console.error("[FIREBASE] Error listening to leaderboard updates:", error);
+              });
+        }
+
+        // Filter games algorithm
+        function filterGames(category) {
+            // Update filter button styles
+            const buttons = document.querySelectorAll('#game-filters button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-background', 'font-bold');
+                btn.classList.add('bg-surface-container', 'text-on-surface-variant');
+            });
+
+            // Highlight clicked button
+            const activeBtn = event.currentTarget;
+            activeBtn.classList.remove('bg-surface-container', 'text-on-surface-variant');
+            activeBtn.classList.add('bg-primary', 'text-background', 'font-bold');
+
+            // Show/hide cards
+            const cards = document.querySelectorAll('#games-grid .game-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.getAttribute('data-genre') === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Live Countdown Loop
+        let timerSeconds = 13499; // 3 hours, 44 min, 59 sec
+        setInterval(() => {
+            if (timerSeconds > 0) {
+                timerSeconds--;
+                const hours = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('tournament-timer').innerText = `${hours}:${minutes}:${seconds}`;
+            }
+        }, 1000);
+
+        // Dynamic Interactive color modifier inside gear cards
+        function changeGearColor(dotElement, color) {
+            const cardElement = dotElement.closest('.glass-panel-purple, .glass-panel-pink');
+            
+            // Remove previous borders and shadows
+            cardElement.classList.remove('neon-border-cyan', 'neon-border-purple', 'neon-border-pink');
+            
+            // Apply corresponding neon borders
+            if (color === 'cyan') {
+                cardElement.classList.add('neon-border-cyan');
+            } else if (color === 'purple') {
+                cardElement.classList.add('neon-border-purple');
+            } else if (color === 'pink') {
+                cardElement.classList.add('neon-border-pink');
+            }
+        }
+
+        // Game Launch validation mockup
+        function launchMockGame(title) {
+            if (neuralLinkState !== 'CONNECTED') {
+                alert(`SYNAPTIC ERROR: Cannot initiate connection to ${title}. Setup your NEURAL LINK coherence uplink sequence first!`);
+                toggleNeuralLink();
+            } else {
+                alert(`SYNAPSE COHERENT: Direct neural link established for '${title}'. Syncing brainwave profile... Prepare for loading matrix!`);
+            }
+        }
+
+        // Firestore Tournament registration
+        function registerForTournament(title) {
+            const userProfileName = document.getElementById('hud-user-profile').innerText;
+            
+            if (db) {
+                db.collection("registrations").add({
+                    tournament: title,
+                    username: userProfileName,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    alert(`Uplink confirmed for '${title}'. Your bio-signature has been saved to the secure Firestore database!`);
+                }).catch(err => {
+                    console.error("Firestore write failed:", err);
+                    alert(`Uplink confirmed for '${title}'. Your bio-signature has been synced with the qualifying bracket.`);
+                });
+            } else {
+                alert(`Uplink confirmed for '${title}'. Your bio-signature has been synced with the qualifying bracket.`);
+            }
+        }
+
+        function purchaseGear(itemName) {
+            alert(`Acquiring '${itemName}'. Syncing transaction index. Checking secure credits footprint...`);
+        }
+
+        // Firestore Newsletter updates
+        function subscribeNeuralUpdates(event) {
+            event.preventDefault();
+            const emailInput = event.target.querySelector('input');
+            const email = emailInput.value;
+            
+            if (db) {
+                db.collection("subscriptions").add({
+                    email: email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    alert('Neural Link connection verified. Synaptic address registered for encrypted updates in Firestore.');
+                    event.target.reset();
+                }).catch(err => {
+                    console.error("Firestore write failed:", err);
+                    alert('Neural Link connection verified. Synaptic address registered for encrypted newsletter dispatches.');
+                    event.target.reset();
+                });
+            } else {
+                alert('Neural Link connection verified. Synaptic address registered for encrypted newsletter dispatches.');
+                event.target.reset();
+            }
+        }
+
+        // Initialize real-time updates on load
+        window.onload = () => {
+            initRealtimeLeaderboard();
+        };
+    </script>
+</body>
+</html>
